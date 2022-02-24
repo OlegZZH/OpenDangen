@@ -45,8 +45,8 @@ if __name__ == "__main__":
     # img = plt.imread("palma.png")
     # img = plt.imread("monkey.jpg")
     # ax2.imshow(img)
-    # ax2.set_xlim(0, 1600)
-    # ax2.set_ylim(0, 1600)
+    ax2.set_xlim(-10, 10)
+    ax2.set_ylim(-10, 10)
     plt.gca().invert_yaxis()
 
     plt.gca().set_aspect("equal")
@@ -54,11 +54,11 @@ if __name__ == "__main__":
     # lineM=ax2.plot(mx,my,linewidth=1, color="tab:blue")
     # pointM=ax2.plot(mx, my,'ro', picker=True, pickradius=5)
 
-
-
+    t1=[0,1,2,3,4,5]
+    t2=np.zeros_like(t1)
     curvaP = ax2.plot(pxc, pyc, linewidth=5, color="tab:orange")
-    lineP = ax2.plot(px, py, linewidth=1, color="tab:blue")
-    pointP = ax2.plot(px, py, 'ro', picker=True, pickradius=5)
+    lineP = ax2.plot(t2, t1, linewidth=1, color="tab:blue")
+    pointP = ax2.plot(t2, t1, 'ro', picker=True, pickradius=5)
     pointbuilder = PointBuilder(pointP[0], lineP[0], curvaP[0])
     pointbuilder.connect()
     # dr = DraggableRectangle(point[0])

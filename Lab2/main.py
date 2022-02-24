@@ -6,6 +6,7 @@ from pyrr import Matrix44
 import moderngl
 from base import CameraWindow
 from Lab1 import PointBuilder
+from Lab1 import biz5
 from read import *
 from OpenGL.GL import *
 from moderngl_window import geometry
@@ -26,6 +27,21 @@ def axis():
     return buffer
 
 
+def line():
+    line_x = []
+    red = 255
+    i=0
+    for x, y in zip(px, py):
+        line_x.append([x, y, 0,red/255,0,0])
+        red-=1
+    line_x = np.array(line_x)
+
+    return line_x
+
+
+
+
+
 class SimpleGrid(CameraWindow):
     title = "Simple Grid"
     gl_version = (3, 3)
@@ -38,33 +54,29 @@ class SimpleGrid(CameraWindow):
         self.camera.mouse_sensitivity = 0.3
         self.points_s = geometry.sphere(radius=0.5, sectors=32, rings=16)
 
-
         self.prog = self.load_program(
             vertex_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\vertex_shader.glsl",
             fragment_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\fragment_shader.glsl")
 
+        line()
         self.P_M = self.prog["prog"]
         self.C_M = self.prog["cam"]
-
         self.L_M = self.prog["lookat"]
-
         self.switcher = self.prog["switcher"]
 
         self.vbo = self.ctx.buffer(grid(5, 15).astype('f4'))
         self.vbo_axis = self.ctx.buffer(axis().astype('f4'))
-
+        self.vbo_line = self.ctx.buffer(line().astype("f4"))
 
         self.vao_grid = self.ctx.vertex_array(self.prog, self.vbo, 'in_vert')
         self.vao_axis = self.ctx.vertex_array(self.prog, self.vbo_axis, 'in_vert')
-
-
+        self.vao_line = self.ctx.vertex_array(self.prog, [(self.vbo_line, "3f 3f", 'in_vert', "point_color")], )
 
         self.lookat = Matrix44.look_at(
             (0.01, 0.0, 15.0),  # eye
             (0.0, 0.0, 0.0),  # target
             (0.0, 0.0, 1.0),  # up
         )
-
 
     def render(self, time, frame_time):
         self.ctx.clear(1.0, 1.0, 1.0)
@@ -82,13 +94,9 @@ class SimpleGrid(CameraWindow):
 
         self.switcher.value = 1
         self.vao_axis.render(moderngl.LINES)
-
-
-
-
-
-
-
+        self.vao_line.render(moderngl.LINE_STRIP)
+        self.switcher.value = 3
+        self.vao_line.render(moderngl.POINTS)
 
 
 if __name__ == '__main__':
