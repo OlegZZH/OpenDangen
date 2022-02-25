@@ -9,7 +9,7 @@ plt.rcParams.update({'figure.max_open_warning': 0})
 
 
 def biz5(ra, rb, rc, rd, re, rf):
-    t = np.linspace(0, 1, 50)
+    t = np.linspace(0, 1, 60)
     r = []
     for u in t:
         r = np.append(r, ra * (1 - u) ** 5 + 5 * u * rb * (1 - u) ** 4 + (10 * rc * u ** 2) * (
