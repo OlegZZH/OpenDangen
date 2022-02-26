@@ -2,7 +2,7 @@ import numpy as np
 
 from main import *
 from matplotlib import pyplot as plt
-# from Lab1 import PointBuilder
+from Lab1 import PointBuilder
 
 
 
@@ -51,26 +51,32 @@ f.close()
 # my*=1.4
 if __name__ == "__main__":
     # paly=np.array(f.readline())
-    fig2,ax2= plt.subplots()
+    fig,(ax1,ax2)= plt.subplots(1,2)
     # img = plt.imread("palma.png")
     # img = plt.imread("monkey.jpg")
     # ax2.imshow(img)
-    ax2.set_xlim(-10, 10)
-    ax2.set_ylim(-10, 10)
+    ax1.set_xlim(-0.1, 0.1)
+    ax1.set_ylim(-0.1, 0.1)
+    ax2.set_xlim(-0.1, 0.1)
+    ax2.set_ylim(-0.1, 0.1)
     plt.gca().invert_yaxis()
 
-    plt.gca().set_aspect("equal")
+    ax1.set_aspect("equal")
+    ax2.set_aspect("equal")
     # curvaM=ax2.plot(mxc,myc, linewidth=5, color="tab:orange")
     # lineM=ax2.plot(mx,my,linewidth=1, color="tab:blue")
     # pointM=ax2.plot(mx, my,'ro', picker=True, pickradius=5)
+    curvaV = ax1.plot(pxcV, pycV, linewidth=5, color="tab:orange")
+    lineV = ax1.plot(pxV, pyV, linewidth=1, color="tab:blue")
+    pointV = ax1.plot(pxV, pyV, 'ro', picker=True, pickradius=5)
+    pointbuilderV = PointBuilder(pointV[0], lineV[0], curvaV[0])
+    pointbuilderV.connect()
 
-    t1=[0,1,2,3,4,5]
-    t2=np.zeros_like(t1)
-    curvaP = ax2.plot(pxc, pyc, linewidth=5, color="tab:orange")
-    lineP = ax2.plot(t1, t2, linewidth=1, color="tab:blue")
-    pointP = ax2.plot(t1, t2, 'ro', picker=True, pickradius=5)
-    pointbuilder = PointBuilder(pointP[0], lineP[0], curvaP[0])
-    pointbuilder.connect()
+    curvaU = ax2.plot(pxcU, pycU, linewidth=5, color="tab:orange")
+    lineU = ax2.plot(pxU, pyU, linewidth=1, color="tab:blue")
+    pointU = ax2.plot(pxU, pyU, 'ro', picker=True, pickradius=5)
+    pointbuilderU = PointBuilder(pointU[0], lineU[0], curvaU[0])
+    pointbuilderU.connect()
     # dr = DraggableRectangle(point[0])
     # dr.connect()
     # pointbuilder = PointBuilder(point[0], line[0], curva[0])

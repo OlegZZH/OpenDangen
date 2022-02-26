@@ -159,14 +159,14 @@ class PointBuilder():
         self.line.figure.canvas.draw()
         self.curva.figure.canvas.draw()
 
-        f = open('CurV.txt', 'w')
+        f = open('CurU.txt', 'w')
 
         for i in self.curva.get_data():
 
             np.savetxt(f,np.array([i]))
         f.close()
 
-        f = open('PointV.txt', 'w')
+        f = open('PointU.txt', 'w')
 
         for i in self.point.get_data():
             # print('i', len(i))

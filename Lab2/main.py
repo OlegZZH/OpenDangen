@@ -41,7 +41,7 @@ def line(px, py):
     red = 255
     i = 0
     for x, y in zip(px, py):
-        line_x.append([x, y, 0, red / 255, 0, 0])
+        line_x.append([x,y, 0, red / 255, 0, 0])
         red -= 1
     line_x = np.array(line_x)
     return line_x
@@ -62,8 +62,9 @@ class SimpleGrid(CameraWindow):
         self.prog = self.load_program(
             vertex_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\vertex_shader.glsl",
             fragment_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\fragment_shader.glsl")
-        lineU = line(pxU, pyU)
-        lineV = line(pxV, pyV)
+
+        lineU = line(50*pxU[:-1:], 50*pyU[:-1:])
+        lineV = line(50*pxV[:-1:], 50*pyV[:-1:])
 
         curvaU = []
         curvaV = []
@@ -90,19 +91,22 @@ class SimpleGrid(CameraWindow):
         curvaU = np.array(*curvaU)
 
         self.U = 30  # 60
+
         self.surface_U = np.array([pyrr.matrix44.create_from_translation(curvaU[0])])
-        for i in curvaU[1::] :
+        for i in curvaU[1::]:
             self.surface_U = np.append(self.surface_U, np.array([pyrr.matrix44.create_from_translation(i)]), axis=0)
 
-        self.surface_V=np.array([pyrr.matrix44.create_from_translation(curvaV[0])])
-        for i in curvaV[1::] :
+        self.surface_V = np.array([pyrr.matrix44.create_from_translation(curvaV[0])])
+        for i in curvaV[1::]:
             self.surface_V = np.append(self.surface_V, np.array([pyrr.matrix44.create_from_translation(i)]), axis=0)
+
+
 
         print(len(self.surface_U))
         self.P_M = self.prog["prog"]
         self.C_M = self.prog["cam"]
         self.L_M = self.prog["lookat"]
-        self.T_M=self.prog["trans"]
+        self.T_M = self.prog["trans"]
         self.switcher = self.prog["switcher"]
 
         self.vbo = self.ctx.buffer(grid(5, 15).astype('f4'))
@@ -125,42 +129,38 @@ class SimpleGrid(CameraWindow):
             (0.0, 0.0, 1.0),  # up
         )
 
-
     def render(self, time, frame_time):
         self.ctx.clear(1.0, 1.0, 1.0)
         self.ctx.enable_only(moderngl.CULL_FACE | moderngl.DEPTH_TEST)
         glPointSize(10)
-        rot_Z = pyrr.matrix44.create_from_z_rotation(time)
+
         proj = Matrix44.perspective_projection(45.0, self.aspect_ratio, 0.1, 1000.0)
 
         self.P_M.write(proj.astype('f4'))
         self.C_M.write(self.camera.matrix.astype('f4'))
         self.L_M.write(self.lookat.astype('f4'))
-        self.T_M.write(self.surface_U[0].astype('f4'))
+        # self.T_M.write(self.surface_U[0].astype('f4'))
         self.switcher.value = 0
         self.vao_grid.render(moderngl.LINES)
 
         self.switcher.value = 1
         self.vao_axis.render(moderngl.LINES)
 
-        self.vao_lineU.render(moderngl.LINE_STRIP)
-        self.switcher.value = 2
-
-        self.vao_curU.render(moderngl.LINE_STRIP)
-
-        self.switcher.value = 1
-
-        self.vao_lineU.render(moderngl.POINTS)
-
         for i in self.surface_U:
             self.T_M.write(i.astype('f4'))
+            # self.switcher.value = 1
+            # self.vao_lineV.render(moderngl.LINE_STRIP)
+            # self.vao_lineV.render(moderngl.POINTS)
+            self.switcher.value = 2
             self.vao_curV.render(moderngl.LINE_STRIP)
+
         for i in self.surface_V:
             self.T_M.write(i.astype('f4'))
+            # self.switcher.value = 1
+            # self.vao_lineU.render(moderngl.LINE_STRIP)
+            # self.vao_lineU.render(moderngl.POINTS)
+            self.switcher.value = 2
             self.vao_curU.render(moderngl.LINE_STRIP)
-
-
-
 
 
 if __name__ == '__main__':
