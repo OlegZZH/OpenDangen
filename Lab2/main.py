@@ -94,6 +94,10 @@ class SimpleGrid(CameraWindow):
         for i in curvaU[1::] :
             self.surface_U = np.append(self.surface_U, np.array([pyrr.matrix44.create_from_translation(i)]), axis=0)
 
+        self.surface_V=np.array([pyrr.matrix44.create_from_translation(curvaV[0])])
+        for i in curvaV[1::] :
+            self.surface_V = np.append(self.surface_V, np.array([pyrr.matrix44.create_from_translation(i)]), axis=0)
+
         print(len(self.surface_U))
         self.P_M = self.prog["prog"]
         self.C_M = self.prog["cam"]
@@ -150,10 +154,11 @@ class SimpleGrid(CameraWindow):
 
         for i in self.surface_U:
             self.T_M.write(i.astype('f4'))
-            # self.vao_lineV.render(moderngl.POINTS)
-            #
-            # self.vao_lineV.render(moderngl.LINE_STRIP)
             self.vao_curV.render(moderngl.LINE_STRIP)
+        for i in self.surface_V:
+            self.T_M.write(i.astype('f4'))
+            self.vao_curU.render(moderngl.LINE_STRIP)
+
 
 
 

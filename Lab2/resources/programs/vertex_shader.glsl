@@ -15,6 +15,6 @@ out vec3 pick_color;
 void main() {
 
 
-    gl_Position =  prog* cam* trans*lookat* vec4(in_vert, 1.0);
+    gl_Position =  prog* cam*lookat* trans* vec4(in_vert, 1.0);
     pick_color=point_color;
 }
