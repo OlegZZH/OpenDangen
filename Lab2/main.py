@@ -36,13 +36,16 @@ def axis():
     return buffer
 
 
-def line(px, py):
+def line(px, py,pz,*color):
     line_x = []
-    red = 255
+    red = color[1]
     i = 0
-    for x, y in zip(px, py):
-        line_x.append([x,y, 0, red / 255, 0, 0])
-        red -= 1
+
+    c=np.zeros(3)
+    c[color[0]]=color[1]
+    for x, y ,z in zip(px, py,pz):
+        line_x.append([x,y, z, *c])
+        c[color[0]] =c[color[0]]- 1
     line_x = np.array(line_x)
     return line_x
 
@@ -63,13 +66,14 @@ class SimpleGrid(CameraWindow):
             vertex_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\vertex_shader.glsl",
             fragment_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\fragment_shader.glsl")
 
-        lineU = line(50*pxU[:-1:], 50*pyU[:-1:])
-        lineV = line(50*pxV[:-1:], 50*pyV[:-1:])
+        lineU = line(50*pxU[:-1:], 50*pyU[:-1:],np.zeros_like(pxU[:-1:]),0,255)
+        lineV = line(50*pxV[:-1:],np.zeros_like(pxU[:-1:]), 50*pyV[:-1:],1,255)
 
         curvaU = []
         curvaV = []
-        lineV = np.flip(lineV[:, :3], axis=1)
-
+        # lineV = np.flip(lineV[:, :3], axis=1)
+        # print(lineV)
+        # print(lineV)
         for i in range(len(lineV[::6])):
             a = np.array(lineV[i + 0])
             b = np.array(lineV[i + 1])
@@ -90,7 +94,7 @@ class SimpleGrid(CameraWindow):
             curvaU.append(biz_sur(a[:3], b[:3], c[:3], d[:3], e[:3], f[:3]))
         curvaU = np.array(*curvaU)
 
-        self.U = 30  # 60
+
 
         self.surface_U = np.array([pyrr.matrix44.create_from_translation(curvaU[0])])
         for i in curvaU[1::]:
@@ -120,7 +124,7 @@ class SimpleGrid(CameraWindow):
         self.vao_axis = self.ctx.vertex_array(self.prog, self.vbo_axis, 'in_vert')
         self.vao_lineU = self.ctx.vertex_array(self.prog, [(self.vbo_lineU, "3f 3f", 'in_vert', "point_color")])
         self.vao_curU = self.ctx.vertex_array(self.prog, self.vbo_curU, 'in_vert')
-        self.vao_lineV = self.ctx.vertex_array(self.prog, self.vbo_lineV, 'in_vert')
+        self.vao_lineV = self.ctx.vertex_array(self.prog, [[self.vbo_lineV, "3f 3f", 'in_vert', "point_color"]])
         self.vao_curV = self.ctx.vertex_array(self.prog, self.vbo_curV, 'in_vert')
 
         self.lookat = Matrix44.look_at(
@@ -146,19 +150,21 @@ class SimpleGrid(CameraWindow):
         self.switcher.value = 1
         self.vao_axis.render(moderngl.LINES)
 
+        self.switcher.value = 3
+        self.T_M.write(self.surface_V[0].astype('f4'))
+        self.vao_lineU.render(moderngl.POINTS)
+        self.vao_lineU.render(moderngl.LINE_STRIP)
+        self.T_M.write(self.surface_U[0].astype('f4'))
+        self.vao_lineV.render(moderngl.POINTS)
+        self.vao_lineV.render(moderngl.LINE_STRIP)
+
         for i in self.surface_U:
             self.T_M.write(i.astype('f4'))
-            # self.switcher.value = 1
-            # self.vao_lineV.render(moderngl.LINE_STRIP)
-            # self.vao_lineV.render(moderngl.POINTS)
             self.switcher.value = 2
             self.vao_curV.render(moderngl.LINE_STRIP)
 
         for i in self.surface_V:
             self.T_M.write(i.astype('f4'))
-            # self.switcher.value = 1
-            # self.vao_lineU.render(moderngl.LINE_STRIP)
-            # self.vao_lineU.render(moderngl.POINTS)
             self.switcher.value = 2
             self.vao_curU.render(moderngl.LINE_STRIP)
 
