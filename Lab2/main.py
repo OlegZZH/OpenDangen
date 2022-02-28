@@ -36,18 +36,16 @@ def axis():
     return buffer
 
 
-def line(px, py,pz,*color):
+def line(px, py, pz, *color):
     line_x = []
-    red = color[1]
-    i = 0
 
-    c=np.zeros(3)
-    c[color[0]]=color[1]
-    for x, y ,z in zip(px, py,pz):
-        line_x.append([x,y, z, *c])
-        c[color[0]] =c[color[0]]- 1
+    c = np.zeros(3)
+    c[color[0]] = color[1]
+    for x, y, z in zip(px, py, pz):
+        line_x.append([x, y, z, *c])
+        c[color[0]] = c[color[0]] - 1
     line_x = np.array(line_x)
-    line_x[:, 3 + color[0]]/=255
+    line_x[:, 3 + color[0]] /= 255
     print(line_x)
     return line_x
 
@@ -63,40 +61,40 @@ class SimpleGrid(CameraWindow):
         self.camera.velocity = 5.0
         self.camera.mouse_sensitivity = 0.3
         self.points_s = geometry.sphere(radius=0.5, sectors=32, rings=16)
+        self.point_change = False
+        self.change_color=[]
 
         self.prog = self.load_program(
             vertex_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\vertex_shader.glsl",
             fragment_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\fragment_shader.glsl")
 
-        lineU = line(50*pxU[:-1:], 50*pyU[:-1:],np.zeros_like(pxU[:-1:]),0,255)
-        lineV = line(50*pxV[:-1:],np.zeros_like(pxU[:-1:]), 50*pyV[:-1:],1,255)
+        self.lineU = line(50 * pxU[:-1:], 50 * pyU[:-1:], np.zeros_like(pxU[:-1:]), 0, 255)
+        self.lineV = line(50 * pxV[:-1:], np.zeros_like(pxU[:-1:]), 50 * pyV[:-1:], 1, 255)
 
         curvaU = []
         curvaV = []
-        # lineV = np.flip(lineV[:, :3], axis=1)
-        # print(lineV)
-        # print(lineV)
-        for i in range(len(lineV[::6])):
-            a = np.array(lineV[i + 0])
-            b = np.array(lineV[i + 1])
-            c = np.array(lineV[i + 2])
-            d = np.array(lineV[i + 3])
-            e = np.array(lineV[i + 4])
-            f = np.array(lineV[i + 5])
+        # self.lineV = np.flip(self.lineV[:, :3], axis=1)
+        # print(self.lineV)
+        # print(self.lineV)
+        for i in range(len(self.lineV[::6])):
+            a = np.array(self.lineV[i + 0])
+            b = np.array(self.lineV[i + 1])
+            c = np.array(self.lineV[i + 2])
+            d = np.array(self.lineV[i + 3])
+            e = np.array(self.lineV[i + 4])
+            f = np.array(self.lineV[i + 5])
             curvaV.append(biz_sur(a[:3], b[:3], c[:3], d[:3], e[:3], f[:3]))
         curvaV = np.array(*curvaV)
 
-        for i in range(len(lineU[::6])):
-            a = np.array(lineU[i + 0])
-            b = np.array(lineU[i + 1])
-            c = np.array(lineU[i + 2])
-            d = np.array(lineU[i + 3])
-            e = np.array(lineU[i + 4])
-            f = np.array(lineU[i + 5])
+        for i in range(len(self.lineU[::6])):
+            a = np.array(self.lineU[i + 0])
+            b = np.array(self.lineU[i + 1])
+            c = np.array(self.lineU[i + 2])
+            d = np.array(self.lineU[i + 3])
+            e = np.array(self.lineU[i + 4])
+            f = np.array(self.lineU[i + 5])
             curvaU.append(biz_sur(a[:3], b[:3], c[:3], d[:3], e[:3], f[:3]))
         curvaU = np.array(*curvaU)
-
-
 
         self.surface_U = np.array([pyrr.matrix44.create_from_translation(curvaU[0])])
         for i in curvaU[1::]:
@@ -105,8 +103,6 @@ class SimpleGrid(CameraWindow):
         self.surface_V = np.array([pyrr.matrix44.create_from_translation(curvaV[0])])
         for i in curvaV[1::]:
             self.surface_V = np.append(self.surface_V, np.array([pyrr.matrix44.create_from_translation(i)]), axis=0)
-
-
 
         print(len(self.surface_U))
         self.P_M = self.prog["prog"]
@@ -117,9 +113,9 @@ class SimpleGrid(CameraWindow):
 
         self.vbo = self.ctx.buffer(grid(5, 15).astype('f4'))
         self.vbo_axis = self.ctx.buffer(axis().astype('f4'))
-        self.vbo_lineU = self.ctx.buffer(lineU.astype("f4"))
+        self.vbo_lineU = self.ctx.buffer(self.lineU.astype("f4"))
         self.vbo_curU = self.ctx.buffer(curvaU.astype("f4"))
-        self.vbo_lineV = self.ctx.buffer(lineV.astype("f4"))
+        self.vbo_lineV = self.ctx.buffer(self.lineV.astype("f4"))
         self.vbo_curV = self.ctx.buffer(curvaV.astype("f4"))
 
         self.vao_grid = self.ctx.vertex_array(self.prog, self.vbo, 'in_vert')
@@ -134,6 +130,40 @@ class SimpleGrid(CameraWindow):
             (0.0, 0.0, 0.0),  # target
             (0.0, 0.0, 1.0),  # up
         )
+
+    def mouse_press_event(self, x, y, button):
+        print("Mouse button {} pressed at {}, {}".format(button, x, y))
+        w, h = self.window_size
+
+        data = glReadPixels(x, h - y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE)
+
+        if self.point_change:
+            self.point_change = False
+            for u, v in zip(self.lineU, self.lineV):
+                u_c=u[3:]==[0,0,0]
+                v_c=v[3:] == [0, 0, 0]
+                if all(u_c):
+                    u[3:]=self.change_color
+                elif v_c.all():
+                    v[3:]=self.change_color
+
+        else:
+            for u,v in zip(self.lineU,self.lineV):
+                if data[0]/255==u[3]:
+                    print(u)
+                    self.change_color=u[3:]
+                    u[3]=0
+                    self.point_change=True
+
+                elif  data[1]/255==v[4]:
+                    print(v)
+                    self.change_color = v[3:]
+                    v[4]=0
+                    self.point_change = True
+
+        self.vbo_lineU.write(self.lineU.astype("f4"))
+        self.vbo_lineV.write(self.lineV.astype("f4"))
+
 
     def render(self, time, frame_time):
         self.ctx.clear(1.0, 1.0, 1.0)

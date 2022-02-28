@@ -33,11 +33,7 @@ class CameraWindow(mglw.WindowConfig):
         if self.camera_enabled:
             self.camera.rot_state(-dx, -dy)
 
-    def mouse_press_event(self, x, y, button):
-        print("Mouse button {} pressed at {}, {}".format(button, x, y))
-        w,h=self.window_size
-        data = glReadPixels(x, h-y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE)
-        print(data[0],data[1],data[2])
+
 
 
 
