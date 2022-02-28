@@ -47,6 +47,8 @@ def line(px, py,pz,*color):
         line_x.append([x,y, z, *c])
         c[color[0]] =c[color[0]]- 1
     line_x = np.array(line_x)
+    line_x[:, 3 + color[0]]/=255
+    print(line_x)
     return line_x
 
 
@@ -143,7 +145,6 @@ class SimpleGrid(CameraWindow):
         self.P_M.write(proj.astype('f4'))
         self.C_M.write(self.camera.matrix.astype('f4'))
         self.L_M.write(self.lookat.astype('f4'))
-        # self.T_M.write(self.surface_U[0].astype('f4'))
         self.switcher.value = 0
         self.vao_grid.render(moderngl.LINES)
 
