@@ -33,10 +33,6 @@ class CameraWindow(mglw.WindowConfig):
         if self.camera_enabled:
             self.camera.rot_state(-dx, -dy)
 
-
-
-
-
     def resize(self, width: int, height: int):
         self.camera.projection.update(aspect_ratio=self.wnd.aspect_ratio)
 

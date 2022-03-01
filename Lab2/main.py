@@ -62,7 +62,7 @@ class SimpleGrid(CameraWindow):
         self.camera.mouse_sensitivity = 0.3
         self.points_s = geometry.sphere(radius=0.5, sectors=32, rings=16)
         self.point_change = False
-        self.change_color=[]
+        self.change_color = np.array([])
 
         self.prog = self.load_program(
             vertex_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\vertex_shader.glsl",
@@ -140,35 +140,32 @@ class SimpleGrid(CameraWindow):
         if self.point_change:
             self.point_change = False
             for u, v in zip(self.lineU, self.lineV):
-                u_c=u[3:]==[0,0,0]
-                v_c=v[3:] == [0, 0, 0]
+                u_c = u[3:] == [0, 0, 0]
+                v_c = v[3:] == [0, 0, 0]
                 if all(u_c):
-                    u[3:]=self.change_color
+                    print(self.change_color)
+                    u[3:] = self.change_color
                 elif v_c.all():
-                    v[3:]=self.change_color
-
-        else:
-            for u,v in zip(self.lineU,self.lineV):
-                if data[0]/255==u[3]:
-                    print(u)
-                    self.change_color=u[3:]
-                    u[3]=0
-                    self.point_change=True
-
-                elif  data[1]/255==v[4]:
-                    print(v)
-                    self.change_color = v[3:]
-                    v[4]=0
-                    self.point_change = True
+                    v[3:] = self.change_color
+        for u, v in zip(self.lineU, self.lineV):
+            if data[0] / 255 == u[3]:
+                print(u[3:])
+                self.change_color = np.copy(u[3:])
+                u[3] = 0
+                self.point_change = True
+            elif data[1] / 255 == v[4]:
+                print(v)
+                self.change_color = np.copy(v[3:])
+                v[4] = 0
+                self.point_change = True
 
         self.vbo_lineU.write(self.lineU.astype("f4"))
         self.vbo_lineV.write(self.lineV.astype("f4"))
 
-
     def render(self, time, frame_time):
         self.ctx.clear(1.0, 1.0, 1.0)
         self.ctx.enable_only(moderngl.CULL_FACE | moderngl.DEPTH_TEST)
-        glPointSize(10)
+        glPointSize(20)
 
         proj = Matrix44.perspective_projection(45.0, self.aspect_ratio, 0.1, 1000.0)
 
