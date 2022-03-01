@@ -162,6 +162,46 @@ class SimpleGrid(CameraWindow):
         self.vbo_lineU.write(self.lineU.astype("f4"))
         self.vbo_lineV.write(self.lineV.astype("f4"))
 
+    def key_event(self, key, action, modifiers):
+        keys = self.wnd.keys
+
+        if self.camera_enabled:
+            self.camera.key_input(key, action, modifiers)
+
+        if action == keys.ACTION_PRESS:
+            if key == keys.C:
+                self.camera_enabled = not self.camera_enabled
+                self.wnd.mouse_exclusivity = self.camera_enabled
+                self.wnd.cursor = not self.camera_enabled
+            if key == keys.SPACE:
+                self.timer.toggle_pause()
+            if not self.camera_enabled:
+                if key == keys.I:
+                    print("Вперед",key)
+                    self.move_point("I")
+                if key == keys.K:
+                    print("Назад")
+                    self.move_point("K")
+                if key == keys.J:
+                    print("Влево")
+                    self.move_point("J")
+                if key == keys.L:
+                    print("Вправо")
+                    self.move_point("L")
+                if key == keys.O:
+                    print("Вверх")
+                    self.move_point("O")
+                if key == keys.U:
+                    print("Вниз")
+                    self.move_point("U")
+    def move_point(self,direction):
+        for u,v in zip(self.lineU, self.lineV):
+            if all( u[3:] == [0, 0, 0]):
+                print(u)
+
+            if all(v[3:] == [0, 0, 0]):
+                print(v)
+
     def render(self, time, frame_time):
         self.ctx.clear(1.0, 1.0, 1.0)
         self.ctx.enable_only(moderngl.CULL_FACE | moderngl.DEPTH_TEST)
