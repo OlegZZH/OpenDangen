@@ -1,7 +1,6 @@
 import numpy as np
-import pyrr.matrix44
-from glfw import swap_buffers
-from pyrr import Matrix44
+
+import pyrr
 
 import moderngl
 from base import CameraWindow
@@ -11,6 +10,31 @@ from OpenGL.GL import *
 from moderngl_window import geometry
 
 from OpenGL.GLU import *
+
+
+def curva(line):
+    curvaL = []
+    for i in range(len(line[::6])):
+        a = np.array(line[i + 0])
+        b = np.array(line[i + 1])
+        c = np.array(line[i + 2])
+        d = np.array(line[i + 3])
+        e = np.array(line[i + 4])
+        f = np.array(line[i + 5])
+        curvaL.append(biz_sur(a[:3], b[:3], c[:3], d[:3], e[:3], f[:3]))
+    return curvaL
+
+
+def surface(curvaU, curvaV):
+    surface_U = np.array([pyrr.matrix44.create_from_translation(curvaU[0])])
+    for i in curvaU[1::]:
+        surface_U = np.append(surface_U, np.array([pyrr.matrix44.create_from_translation(i)]), axis=0)
+
+    surface_V = np.array([pyrr.matrix44.create_from_translation(curvaV[0])])
+    for i in curvaV[1::]:
+        surface_V = np.append(surface_V, np.array([pyrr.matrix44.create_from_translation(i)]), axis=0)
+
+    return surface_U, surface_V
 
 
 def biz_sur(*args):
@@ -71,38 +95,11 @@ class SimpleGrid(CameraWindow):
         self.lineU = line(50 * pxU[:-1:], 50 * pyU[:-1:], np.zeros_like(pxU[:-1:]), 0, 255)
         self.lineV = line(50 * pxV[:-1:], np.zeros_like(pxU[:-1:]), 50 * pyV[:-1:], 1, 255)
 
-        curvaU = []
-        curvaV = []
-        # self.lineV = np.flip(self.lineV[:, :3], axis=1)
-        # print(self.lineV)
-        # print(self.lineV)
-        for i in range(len(self.lineV[::6])):
-            a = np.array(self.lineV[i + 0])
-            b = np.array(self.lineV[i + 1])
-            c = np.array(self.lineV[i + 2])
-            d = np.array(self.lineV[i + 3])
-            e = np.array(self.lineV[i + 4])
-            f = np.array(self.lineV[i + 5])
-            curvaV.append(biz_sur(a[:3], b[:3], c[:3], d[:3], e[:3], f[:3]))
-        curvaV = np.array(*curvaV)
+        curvaV = np.array(*curva(self.lineV))
 
-        for i in range(len(self.lineU[::6])):
-            a = np.array(self.lineU[i + 0])
-            b = np.array(self.lineU[i + 1])
-            c = np.array(self.lineU[i + 2])
-            d = np.array(self.lineU[i + 3])
-            e = np.array(self.lineU[i + 4])
-            f = np.array(self.lineU[i + 5])
-            curvaU.append(biz_sur(a[:3], b[:3], c[:3], d[:3], e[:3], f[:3]))
-        curvaU = np.array(*curvaU)
+        curvaU = np.array(*curva(self.lineU))
 
-        self.surface_U = np.array([pyrr.matrix44.create_from_translation(curvaU[0])])
-        for i in curvaU[1::]:
-            self.surface_U = np.append(self.surface_U, np.array([pyrr.matrix44.create_from_translation(i)]), axis=0)
-
-        self.surface_V = np.array([pyrr.matrix44.create_from_translation(curvaV[0])])
-        for i in curvaV[1::]:
-            self.surface_V = np.append(self.surface_V, np.array([pyrr.matrix44.create_from_translation(i)]), axis=0)
+        self.surface_U, self.surface_V = surface(curvaU, curvaV)
 
         print(len(self.surface_U))
         self.P_M = self.prog["prog"]
@@ -125,7 +122,7 @@ class SimpleGrid(CameraWindow):
         self.vao_lineV = self.ctx.vertex_array(self.prog, [[self.vbo_lineV, "3f 3f", 'in_vert', "point_color"]])
         self.vao_curV = self.ctx.vertex_array(self.prog, self.vbo_curV, 'in_vert')
 
-        self.lookat = Matrix44.look_at(
+        self.lookat = pyrr.matrix44.create_look_at(
             (0.01, 0.0, 15.0),  # eye
             (0.0, 0.0, 0.0),  # target
             (0.0, 0.0, 1.0),  # up
@@ -176,38 +173,46 @@ class SimpleGrid(CameraWindow):
             if key == keys.SPACE:
                 self.timer.toggle_pause()
             if not self.camera_enabled:
-                if key == keys.I:
-                    print("Вперед",key)
-                    self.move_point("I")
-                if key == keys.K:
-                    print("Назад")
-                    self.move_point("K")
-                if key == keys.J:
-                    print("Влево")
-                    self.move_point("J")
-                if key == keys.L:
-                    print("Вправо")
-                    self.move_point("L")
-                if key == keys.O:
-                    print("Вверх")
-                    self.move_point("O")
-                if key == keys.U:
-                    print("Вниз")
-                    self.move_point("U")
-    def move_point(self,direction):
-        for u,v in zip(self.lineU, self.lineV):
-            if all( u[3:] == [0, 0, 0]):
-                print(u)
+                if key == keys.I: self.move_point("I")
+                if key == keys.K: self.move_point("K")
+                if key == keys.J: self.move_point("J")
+                if key == keys.L: self.move_point("L")
+                if key == keys.O: self.move_point("O")
+                if key == keys.U: self.move_point("U")
+
+    def move_point(self, direction):
+        for u, v in zip(self.lineU, self.lineV):
+            if all(u[3:] == [0, 0, 0]):
+                if direction == "I": u[2] -= 0.3
+                if direction == "K": u[2] += 0.3
+                if direction == "J": u[1] -= 0.3
+                if direction == "L": u[1] += 0.3
+                if direction == "U": u[0] += 0.3
+                if direction == "O": u[0] -= 0.3
 
             if all(v[3:] == [0, 0, 0]):
-                print(v)
+                if direction == "I": v[2] -= 0.3
+                if direction == "K": v[2] += 0.3
+                if direction == "J": v[1] -= 0.3
+                if direction == "L": v[1] += 0.3
+                if direction == "U": v[0] += 0.3
+                if direction == "O": v[0] -= 0.3
+        self.vbo_lineU.write(self.lineU.astype("f4"))
+        self.vbo_lineV.write(self.lineV.astype("f4"))
+        curvaV = np.array(*curva(self.lineV))
+        curvaU = np.array(*curva(self.lineU))
+
+        self.vbo_curU.write(curvaU.astype("f4"))
+        self.vbo_curV.write(curvaV.astype("f4"))
+
+        self.surface_U, self.surface_V = surface(curvaU, curvaV)
 
     def render(self, time, frame_time):
         self.ctx.clear(1.0, 1.0, 1.0)
         self.ctx.enable_only(moderngl.CULL_FACE | moderngl.DEPTH_TEST)
         glPointSize(20)
 
-        proj = Matrix44.perspective_projection(45.0, self.aspect_ratio, 0.1, 1000.0)
+        proj = pyrr.matrix44.create_perspective_projection(45.0, self.aspect_ratio, 0.1, 1000.0)
 
         self.P_M.write(proj.astype('f4'))
         self.C_M.write(self.camera.matrix.astype('f4'))
