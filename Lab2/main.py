@@ -8,6 +8,7 @@ from base import CameraWindow
 from read import *
 from OpenGL.GL import *
 from moderngl_window import geometry
+from tempfile import TemporaryFile
 
 from OpenGL.GLU import *
 
@@ -24,6 +25,9 @@ def curva(line):
         curvaL.append(biz_sur(a[:3], b[:3], c[:3], d[:3], e[:3], f[:3]))
     return curvaL
 
+def load():
+    line = np.load('surface.npz')
+    return line['lineU'],line['lineV']
 
 def surface(curvaU, curvaV):
     surface_U = np.array([pyrr.matrix44.create_from_translation(curvaU[0])])
@@ -70,7 +74,6 @@ def line(px, py, pz, *color):
         c[color[0]] = c[color[0]] - 1
     line_x = np.array(line_x)
     line_x[:, 3 + color[0]] /= 255
-    print(line_x)
     return line_x
 
 
@@ -86,22 +89,23 @@ class SimpleGrid(CameraWindow):
         self.camera.mouse_sensitivity = 0.3
         self.points_s = geometry.sphere(radius=0.5, sectors=32, rings=16)
         self.point_change = False
-        self.change_color = np.array([])
+        # self.change_color = np.array([])
 
         self.prog = self.load_program(
             vertex_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\vertex_shader.glsl",
             fragment_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\fragment_shader.glsl")
 
-        self.lineU = line(50 * pxU[:-1:], 50 * pyU[:-1:], np.zeros_like(pxU[:-1:]), 0, 255)
-        self.lineV = line(50 * pxV[:-1:], np.zeros_like(pxU[:-1:]), 50 * pyV[:-1:], 1, 255)
+        # self.lineU = line(50 * pxU[:-1:], 50 * pyU[:-1:], np.zeros_like(pxU[:-1:]), 0, 255)
+        # self.lineV = line(50 * pxV[:-1:], np.zeros_like(pxU[:-1:]), 50 * pyV[:-1:], 1, 255)
 
+        self.lineU,self.lineV=load()
+        # print(self.lineU, self.lineV)
         curvaV = np.array(*curva(self.lineV))
-
+        self.change_color = np.array([])
         curvaU = np.array(*curva(self.lineU))
 
         self.surface_U, self.surface_V = surface(curvaU, curvaV)
 
-        print(len(self.surface_U))
         self.P_M = self.prog["prog"]
         self.C_M = self.prog["cam"]
         self.L_M = self.prog["lookat"]
@@ -133,25 +137,23 @@ class SimpleGrid(CameraWindow):
         w, h = self.window_size
 
         data = glReadPixels(x, h - y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE)
+        print(data[0],data[1],data[2])
 
         if self.point_change:
             self.point_change = False
             for u, v in zip(self.lineU, self.lineV):
-                u_c = u[3:] == [0, 0, 0]
-                v_c = v[3:] == [0, 0, 0]
-                if all(u_c):
-                    print(self.change_color)
+                if all(u[3:] == [0, 0, 0]):
                     u[3:] = self.change_color
-                elif v_c.all():
+                elif all(v[3:] == [0, 0, 0]):
                     v[3:] = self.change_color
         for u, v in zip(self.lineU, self.lineV):
-            if data[0] / 255 == u[3]:
-                print(u[3:])
+            print(data[0])
+            print(int(u[3]*255))
+            if data[0] == int(u[3]*255):
                 self.change_color = np.copy(u[3:])
                 u[3] = 0
                 self.point_change = True
-            elif data[1] / 255 == v[4]:
-                print(v)
+            elif data[1]  == int(v[4]*255):
                 self.change_color = np.copy(v[3:])
                 v[4] = 0
                 self.point_change = True
@@ -201,11 +203,26 @@ class SimpleGrid(CameraWindow):
         self.vbo_lineV.write(self.lineV.astype("f4"))
         curvaV = np.array(*curva(self.lineV))
         curvaU = np.array(*curva(self.lineU))
-
         self.vbo_curU.write(curvaU.astype("f4"))
         self.vbo_curV.write(curvaV.astype("f4"))
-
         self.surface_U, self.surface_V = surface(curvaU, curvaV)
+
+        self.save()
+
+    def save(self):
+        U=np.copy(self.lineU)
+        V=np.copy(self.lineV)
+        print(U)
+        print(V)
+        if self.point_change:
+            for u, v in zip(U, V):
+                if all(u[3:] == [0, 0, 0]):
+                    u[3:] = self.change_color
+                elif all(v[3:] == [0, 0, 0]):
+                    v[3:] = self.change_color
+
+        np.savez("surface",lineU=U,lineV= V,select=self.change_color)
+
 
     def render(self, time, frame_time):
         self.ctx.clear(1.0, 1.0, 1.0)
