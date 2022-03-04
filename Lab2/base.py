@@ -26,20 +26,6 @@ class CameraWindow(mglw.WindowConfig):
                 self.wnd.cursor = not self.camera_enabled
             if key == keys.SPACE:
                 self.timer.toggle_pause()
-            if not self.camera_enabled:
-                if key == keys.I:
-                    print("Вперед")
-
-                if key == keys.K:
-                    print("Назад")
-                if key == keys.J:
-                    print("Влево")
-                if key == keys.L:
-                    print("Вправо")
-                if key == keys.O:
-                    print("Вверх")
-                if key == keys.U:
-                    print("Вниз")
 
 
 

@@ -76,8 +76,8 @@ class SimpleGrid(CameraWindow):
         line_buffer, point_T = line(px, py)
 
         self.prog = self.load_program(
-            vertex_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\vertex_shader.glsl",
-            fragment_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab2\resources\programs\fragment_shader.glsl")
+            vertex_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab1\resources\programs\vertex_shader.glsl",
+            fragment_shader=r"C:\Users\Oleg\Dropbox\lab\OpenDangen\Lab1\resources\programs\fragment_shader.glsl")
 
         self.P_M = self.prog["prog"]
         self.C_M = self.prog["cam"]
@@ -141,18 +141,18 @@ class SimpleGrid(CameraWindow):
         self.vao_axis.render(moderngl.LINES)
 
         self.R_M.write(rot_Z.astype('f4'))
-        self.vao_line.render(moderngl.LINE_STRIP)
-        self.vao_curva.render(moderngl.LINE_STRIP)
-        self.switcher.value = 3
-        self.vao_line.render(moderngl.POINTS)
-
-
-        self.switcher.value = 2
-        for i in self.surface_H:
-            self.R_M.write(i.astype('f4'))
-            self.vao_curva.render(moderngl.LINE_STRIP)
-            # self.vao_line.render(moderngl.LINE_STRIP)
-            # self.vao_line.render(moderngl.POINTS)
+        # self.vao_line.render(moderngl.LINE_STRIP)
+        # self.vao_curva.render(moderngl.LINE_STRIP)
+        # self.switcher.value = 3
+        # self.vao_line.render(moderngl.POINTS)
+        #
+        #
+        # self.switcher.value = 2
+        # for i in self.surface_H:
+        #     self.R_M.write(i.astype('f4'))
+        #     self.vao_curva.render(moderngl.LINE_STRIP)
+        #     # self.vao_line.render(moderngl.LINE_STRIP)
+        #     # self.vao_line.render(moderngl.POINTS)
 
 
 
