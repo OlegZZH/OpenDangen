@@ -185,20 +185,20 @@ class SimpleGrid(CameraWindow):
     def move_point(self, direction):
         for u, v in zip(self.lineU, self.lineV):
             if all(u[3:] == [0, 0, 0]):
-                if direction == "I": u[2] -= 0.3
-                if direction == "K": u[2] += 0.3
-                if direction == "J": u[1] -= 0.3
-                if direction == "L": u[1] += 0.3
-                if direction == "U": u[0] += 0.3
-                if direction == "O": u[0] -= 0.3
+                if direction == "I": u[2] -= 0.1
+                if direction == "K": u[2] += 0.1
+                if direction == "J": u[1] -= 0.1
+                if direction == "L": u[1] += 0.1
+                if direction == "U": u[0] += 0.1
+                if direction == "O": u[0] -= 0.1
 
             if all(v[3:] == [0, 0, 0]):
-                if direction == "I": v[2] -= 0.3
-                if direction == "K": v[2] += 0.3
-                if direction == "J": v[1] -= 0.3
-                if direction == "L": v[1] += 0.3
-                if direction == "U": v[0] += 0.3
-                if direction == "O": v[0] -= 0.3
+                if direction == "I": v[2] -= 0.1
+                if direction == "K": v[2] += 0.1
+                if direction == "J": v[1] -= 0.1
+                if direction == "L": v[1] += 0.1
+                if direction == "U": v[0] += 0.1
+                if direction == "O": v[0] -= 0.1
         self.vbo_lineU.write(self.lineU.astype("f4"))
         self.vbo_lineV.write(self.lineV.astype("f4"))
         curvaV = np.array(*curva(self.lineV))
@@ -207,7 +207,7 @@ class SimpleGrid(CameraWindow):
         self.vbo_curV.write(curvaV.astype("f4"))
         self.surface_U, self.surface_V = surface(curvaU, curvaV)
 
-        # self.save()
+        self.save()
 
     def save(self):
         U=np.copy(self.lineU)
@@ -240,29 +240,36 @@ class SimpleGrid(CameraWindow):
         self.switcher.value = 1
         self.vao_axis.render(moderngl.LINES)
 
-        # self.switcher.value = 3
-        # self.T_M.write(self.surface_V[0].astype('f4'))
-        #
-        # self.T_M.write(self.surface_U[0].astype('f4'))
-        # self.vao_lineV.render(moderngl.POINTS)
-        # self.vao_lineV.render(moderngl.LINE_STRIP)
+        self.switcher.value = 3
+        self.T_M.write(self.surface_V[0].astype('f4'))
+        self.vao_lineU.render(moderngl.POINTS)
+        self.vao_lineU.render(moderngl.LINE_STRIP)
+        self.T_M.write(self.surface_V[-1].astype('f4'))
+        self.vao_lineU.render(moderngl.POINTS)
+        self.vao_lineU.render(moderngl.LINE_STRIP)
+
+        self.T_M.write(self.surface_U[0].astype('f4'))
+        self.vao_lineV.render(moderngl.POINTS)
+        self.vao_lineV.render(moderngl.LINE_STRIP)
+
+        self.T_M.write(self.surface_U[-1].astype('f4'))
+        self.vao_lineV.render(moderngl.POINTS)
+        self.vao_lineV.render(moderngl.LINE_STRIP)
 
         for i in self.surface_U:
             self.T_M.write(i.astype('f4'))
 
 
-            self.switcher.value = 3
-            self.vao_lineV.render(moderngl.POINTS)
-            self.vao_lineV.render(moderngl.LINE_STRIP)
+            # self.switcher.value = 3
+            # self.vao_lineV.render(moderngl.POINTS)
+            # self.vao_lineV.render(moderngl.LINE_STRIP)
             self.switcher.value = 2
             self.vao_curV.render(moderngl.LINE_STRIP)
 
         for i in self.surface_V:
             self.T_M.write(i.astype('f4'))
 
-            self.switcher.value = 3
-            self.vao_lineU.render(moderngl.POINTS)
-            self.vao_lineU.render(moderngl.LINE_STRIP)
+
             self.switcher.value = 2
             self.vao_curU.render(moderngl.LINE_STRIP)
 

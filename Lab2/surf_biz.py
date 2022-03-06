@@ -3,6 +3,7 @@ import pyrr.matrix44
 from glfw import swap_buffers
 from pyrr import Matrix44
 
+from math import factorial as fc
 import moderngl
 from base import CameraWindow
 from Lab1 import PointBuilder
@@ -12,15 +13,45 @@ from moderngl_window import geometry
 from random import *
 
 from OpenGL.GLU import *
+def biz(*args):
+    t = np.linspace(0, 1, 40)
+    r = []
+    for u in t:
+        tm=(1-u)
+        r=np.append(r,(args[0]*tm**3)+(3*u*args[1]*tm**2)+(3*args[2]*tm*u**2)+args[3]*u**3)
+    return r
+
 
 def surf(h,w):
-    line = np.array([])
-    row =[]
+    points = np.array([])
+
     for x  in range(-h,h):
         for y in range(-w,w):
-            line=np.append(line,[x,y,0])#np.random.random()
-        row.append(line)
-    return line
+            points=np.append(points,[x,y,np.random.random()*2])#np.random.random()
+
+    p=points.reshape(4, 4, 3)
+    curv=[]
+    curu=[]
+    for i in p :
+        a=i[0]
+        b=i[1]
+        c=i[2]
+        d=i[3]
+        curv.append(biz(a,b,c,d))
+
+    curv=np.array(curv)
+    cf=curv.reshape(4,40,3)
+    print(len(cf[0][0]))
+    for i in range(len(cf[0])):
+        a = cf[0][i]
+        b = cf[1][i]
+        c = cf[2][i]
+        d = cf[3][i]
+        # print(a)
+        curu.append( biz(a, b, c, d))
+    curu = np.array(curu)
+
+    return points,curv,curu
 
 def grid(size, steps):
     u = np.repeat(np.linspace(-size, size, steps), 2)
@@ -54,28 +85,28 @@ class SimpleGrid(CameraWindow):
         self.L_M = self.prog["lookat"]
         self.T_M = self.prog["trans"]
         self.switcher = self.prog["switcher"]
-
+        point,curv,curu=surf(2,2)
 
         self.vbo = self.ctx.buffer(grid(5, 15).astype('f4'))
         self.vbo_axis = self.ctx.buffer(axis().astype('f4'))
-        self.vbo_points=self.ctx.buffer(surf(2,2).astype('f4'))
-        a=np.arange(0,16).reshape(4,4)
+        self.vbo_points=self.ctx.buffer(point.astype('f4'))
+        self.vbo_curv=self.ctx.buffer(curv.astype('f4'))
+        self.vbo_curu=self.ctx.buffer(curu.astype('f4'))
+        a=np.arange(16).reshape(4,4)
         index=np.array([])
-        indey=np.array([])
-
         for i in a :
             index=np.append(index,[i[0],*np.repeat(i[1:-1],2),i[-1]])
 
         for j in range(0,len(a[0])):
-            print(a[:,j])
             index = np.append(index, [a[:,j][0], *np.repeat(a[:,j][1:-1], 2), a[:,j][-1]])
 
-        print(index)
         self.ibo_line=self.ctx.buffer(index.astype('i4'))
 
         self.vao_grid = self.ctx.vertex_array(self.prog, self.vbo, 'in_vert')
         self.vao_axis = self.ctx.vertex_array(self.prog, self.vbo_axis, 'in_vert')
-        self.vao_points = self.ctx.vertex_array(self.prog, self.vbo_points, 'in_vert',index_buffer=self.ibo_line )
+        self.vao_points = self.ctx.vertex_array(self.prog, self.vbo_points, 'in_vert',index_buffer= self.ibo_line)
+        self.vao_curv =self.ctx.vertex_array(self.prog,self.vbo_curv,'in_vert')
+        self.vao_curu = self.ctx.vertex_array(self.prog, self.vbo_curu, 'in_vert')
 
         self.lookat = Matrix44.look_at(
             (0.01, 0.0, 15.0),  # eye
@@ -102,6 +133,9 @@ class SimpleGrid(CameraWindow):
         self.vao_axis.render(moderngl.LINES)
         self.vao_points.render(moderngl.POINTS)
         self.vao_points.render(moderngl.LINES)
+        self.switcher.value = 2
+        # self.vao_curv.render(moderngl.LINES)
+        self.vao_curu.render(moderngl.POINTS)
 
 
 
