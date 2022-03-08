@@ -145,19 +145,19 @@ class SimpleGrid(CameraWindow):
 
             curu.append(biz(a, b, c, d))
         curu = np.array(curu)
-        self.point = np.append(self.point, points)
-        self.curu = np.append(self.curu, curu)
+        self.point = np.append(points,self.point )
+        self.curu = np.append(curu,self.curu)
         # print(curu.reshape(size, size, 3))
         m=int(self.curu.size/(3*size**2))
         print("curv= ",self.curu.reshape(m*100,100,3))
         a = np.arange(m*size ** 2).reshape(m*size, size)
-        print(a.shape)
+        print(len(a[0]))
         index = np.array([])
         for i in a:
             index = np.append(index, [i[0], *np.repeat(i[1:-1], 2), i[-1]])
 
-        for j in range(0, len(a[0])):
-            index = np.append(index, [a[:, j][0], *np.repeat(a[:, j][1:-1], 2), a[:, j][-1]])
+        for j in a.T:
+            index = np.append(index, [j[0], *np.repeat(j[1:-1], 2), j[-1]])
 
 
         self.index_curv= index
