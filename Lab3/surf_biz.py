@@ -6,8 +6,7 @@ from pyrr import Matrix44
 from math import factorial as fc
 import moderngl
 from base import CameraWindow
-from Lab1 import PointBuilder
-from read import *
+
 from OpenGL.GL import *
 from moderngl_window import geometry
 from random import *
