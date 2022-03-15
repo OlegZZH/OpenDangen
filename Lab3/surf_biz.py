@@ -1,32 +1,70 @@
-import numpy as np
-import pyrr.matrix44
-from glfw import swap_buffers
-from pyrr import Matrix44
 
-from math import factorial as fc
+import pyrr.matrix44
+from pyrr import Matrix44
 import moderngl
 from base import CameraWindow
-
 from OpenGL.GL import *
-from moderngl_window import geometry
-from random import *
 from pathlib import Path
 from OpenGL.GLU import *
+from numba import njit
+from save_load import *
 
-size =20
+
+
+size = 30
 color = 255
 
 
+@njit(parallel=True)
 def biz(*args):
     t = np.linspace(0, 1, size)
     r = []
     for u in t:
         tm = (1 - u)
-        r = np.append(r, (args[0] * tm ** 3) + (3 * u * args[1] * tm ** 2) + (3 * args[2] * tm * u ** 2) + args[
-            3] * u ** 3)
+        r.append((args[0] * tm ** 3) + (3 * u * args[1] * tm ** 2) + (3 * args[2] * tm * u ** 2) + args[3] * u ** 3)
     return r
 
 
+def plot_surf(points):
+
+    curv = []
+    curu = []
+    for i in points.reshape(4, 4, 3):
+        a = i[0][0:3]
+        b = i[1][0:3]
+        c = i[2][0:3]
+        d = i[3][0:3]
+        curv.append(biz(a, b, c, d))
+
+    curv = np.array(curv)
+    cf = curv.reshape(4, size, 3)
+    for i in range(size):
+        a = cf[0][i]
+        b = cf[1][i]
+        c = cf[2][i]
+        d = cf[3][i]
+
+        curu.append(biz(a, b, c, d))
+    curu = np.array(curu)
+
+    return curu
+@njit
+def calcNormals(V1,V2,V3):
+    vx1 = V1[0] - V2[0]
+    vy1 = V1[1] - V2[1]
+    vz1 = V1[2] - V2[2]
+    vx2 = V2[0] - V3[0]
+    vy2 = V2[1] - V3[1]
+    vz2 = V2[2] - V3[2]
+    N=[]
+    N.append( vy1 * vz2 - vz1 * vy2)
+    N.append(vz1 * vx2 - vx1 * vz2)
+    N.append(vx1 * vy2 - vy1 * vx2)
+    wrki = np.sqrt(np.square(vy1*vz2-vz1*vy2)+np.square(vz1*vx2-vx1*vz2)+np.square(vx1*vy2-vy1*vx2))
+    N[0] = (N[0] / wrki) if wrki != 0 else 1
+    N[1] = (N[1] / wrki) if wrki != 0 else 1
+    N[2] = (N[2] / wrki) if wrki != 0 else 1
+    return N
 def grid(size, steps):
     u = np.repeat(np.linspace(-size, size, steps), 2)
     v = np.tile([-size, size], steps)
@@ -34,6 +72,7 @@ def grid(size, steps):
     return np.concatenate([np.dstack([u, v, w]), np.dstack([v, u, w])])
 
 
+@njit
 def axis():
     buffer = np.array([[0, 10, 0], [0, -10, 0], [-10, 0, 0], [10, 0, 0], [0, 0, 10], [0, 0, -10]])
     return buffer
@@ -53,49 +92,51 @@ class SimpleGrid(CameraWindow):
         self.select_color = np.array([])
         self.select_index = np.array([])
 
-        self.prog = self.load_program(vertex_shader= r"programs\vertex_shader.glsl",fragment_shader= r"programs\fragment_shader.glsl")
+        self.prog = self.load_program(vertex_shader=r"programs\vertex_shader.glsl",
+                                      fragment_shader=r"programs\fragment_shader.glsl")
 
         self.P_M = self.prog["prog"]
         self.C_M = self.prog["cam"]
         self.L_M = self.prog["lookat"]
         self.T_M = self.prog["trans"]
         self.switcher = self.prog["switcher"]
-        self.lightColor=self.prog["lightColor"]
-        self.objectColor=self.prog["objectColor"]
+        self.lightColor = self.prog["lightColor"]
+        self.objectColor = self.prog["objectColor"]
         self.lightPos = self.prog["lightPos"]
+        self.viewPos=self.prog["viewPos"]
         self.point = np.array([])
         self.curu = np.array([])
         self.index_curv = np.array([])
         self.index = np.array([])
-        self.load_patch()
-        self.add_surf(self.load_data)
-        self.add_patch(self.load_data)
+        load_data=load_patch()
+        self.add_surf(load_data)
+        self.add_patch(load_data)
         self.update_index()
 
         self.vbo = self.ctx.buffer(grid(5, 15).astype('f4'))
         self.vbo_axis = self.ctx.buffer(axis().astype('f4'))
         self.vbo_points = self.ctx.buffer(self.point.astype('f4'))
 
-        self.triangle()
+
         self.normals()
-        self.vbo_poligon=self.ctx.buffer(self.resh_curv.astype('f4'))
-        self.vbo_curu = self.ctx.buffer(self.curu.astype('f4'))
-        self.vbo_light=self.ctx.buffer(np.array([0.0,0.0,0.0],dtype='f4'))
-        self.vbo_norm=self.ctx.buffer(self.norm.astype('f4'))
+        self.vbo_poligon = self.ctx.buffer(self.resh_curv.astype('f4'))
+        # self.vbo_curu = self.ctx.buffer(self.curu.astype('f4'))
+        self.vbo_light = self.ctx.buffer(np.array([0.0, 0.0, 0.0], dtype='f4'))
 
 
         self.ibo_line = self.ctx.buffer(self.index.astype('i4'))
-        self.ibo_curv = self.ctx.buffer(self.index_curv.astype('i4'))
+        # self.ibo_curv = self.ctx.buffer(self.index_curv.astype('i4'))
 
         self.vao_grid = self.ctx.vertex_array(self.prog, self.vbo, 'in_vert')
         self.vao_axis = self.ctx.vertex_array(self.prog, self.vbo_axis, 'in_vert')
         self.vao_points = self.ctx.vertex_array(self.prog, [(self.vbo_points, "3f 3f", 'in_vert', "point_color")],
                                                 index_buffer=self.ibo_line)
-        self.vao_curu = self.ctx.vertex_array(self.prog,
-                                              [(self.vbo_curu, '3f', 'in_vert')], index_buffer=self.ibo_curv)  # , index_buffer=self.ibo_curv
-        self.vao_poligon=self.ctx.vertex_array(self.prog,[(self.vbo_poligon, "3f 3f", 'in_vert',"normal")])
-        self.vao_light=self.ctx.vertex_array(self.prog,self.vbo_light,"in_vert")
-        self.vao_norm=self.ctx.vertex_array(self.prog,self.vbo_norm,'in_vert')
+        # self.vao_curu = self.ctx.vertex_array(self.prog,
+        #                                       [(self.vbo_curu, '3f', 'in_vert')],
+        #                                       index_buffer=self.ibo_curv)  # , index_buffer=self.ibo_curv
+        self.vao_poligon = self.ctx.vertex_array(self.prog, [(self.vbo_poligon, "3f 3f", 'in_vert', "normal")])
+        self.vao_light = self.ctx.vertex_array(self.prog, self.vbo_light, "in_vert")
+
 
         self.lookat = Matrix44.look_at(
             (0.01, 0.0, 4.0),  # eye
@@ -106,10 +147,8 @@ class SimpleGrid(CameraWindow):
         self.L_M.write(self.lookat.astype('f4'))
         self.ctx.wireframe = False
         self.T_M.write(self.translation.astype('f4'))
-        self.lightColor.write(np.array([1.0,1.0,1.0]).astype('f4'))
+        self.lightColor.write(np.array([1.0, 1.0, 1.0]).astype('f4'))
         self.objectColor.write(np.array([1.0, 0.5, 0.31]).astype('f4'))
-
-
 
     def mouse_press_event(self, x, y, button):
         print("Mouse button {} pressed at {}, {}".format(button, x, y))
@@ -160,69 +199,60 @@ class SimpleGrid(CameraWindow):
                     self.point[find()[0], find()[1], 0] += 0.1
 
                 self.curu = np.array([])
-                self.curu = np.append(self.plot_surf(self.point[:, :, :3][1::2]), self.curu)
-                self.curu = np.append(self.plot_surf(self.point[:, :, :3][::2]), self.curu)
-                self.triangle()
+                self.curu = np.append(plot_surf(self.point[:, :, :3][1::2]), self.curu)
+                self.curu = np.append(plot_surf(self.point[:, :, :3][::2]), self.curu)
+
                 self.normals()
                 self.vbo_poligon.write(self.resh_curv.astype('f4'))
                 self.vbo_points.write(self.point.astype("f4"))
 
-                # self.save_patch()
+                # save_patch()
 
-    def save_patch(self):
-        np.savez("surface1", patch1=self.point[:, :, :3][1::2], patch2=self.point[:, :, :3][::2])
-
-    def load_patch(self):
-        self.load_data = np.load("surface1.npz")
 
     def normals(self):
-
-        self.V1 = np.empty((0,3))
-        self.V2 = np.empty((0,3))
-        self.V3 = np.empty((0,3))
-
-        n=0
-
-        for j in range((size * 2 - 2)**2+(size * 2 - 2)):
-            if j % (size * 2 - 2) == 0 and j!=0:
-                n+=2
-
-            self.V1 = np.vstack((self.V1, self.resh_curv[j+n]))
-            self.V2 = np.vstack((self.V2, self.resh_curv[j+n+1]))
-            self.V3 = np.vstack((self.V3, self.resh_curv[j+n+2]))
-
-        self.norm=np.empty((0,3))
-
-        for i in range(len(self.V1)):
-            self.norm=np.vstack((self.norm,pyrr.vector3.generate_normals(self.V1[i],self.V2[i],self.V3[i])))
-        axis0,axis1=np.where(np.isnan(self.norm))
-        for i,j in zip(axis0,axis1):
-            self.norm[i][j]=0
-
-        self.norm[::2]=-self.norm[::2]
-
-        self.resh_curv = np.empty((0, 6))
-        for i in range(len(self.V1)):
-            self.resh_curv = np.vstack((self.resh_curv, np.append(self.V1[i],self.norm[i]), np.append(self.V2[i],self.norm[i]), np.append(self.V3[i],self.norm[i])))
-
-        print(self.resh_curv[0:7])
-
-
-        # print(self.V1.shape,self.V2.shape,self.V3.shape)
-    def triangle(self):
         self.resh_curv = np.empty((0, 3))
         temp = self.curu.reshape(size * 2, size, 3)
 
-        for index in range(size*2-1):
+        for index in range(size * 2 - 1):
             if index % 2 == 0:
                 for i in range(size):
                     self.resh_curv = np.vstack((self.resh_curv, temp[index][i]))
                     self.resh_curv = np.vstack((self.resh_curv, temp[index + 1][i]))
             if index % 2 == 1:
-                for i in range(size-1,-1,-1):
+                for i in range(size - 1, -1, -1):
                     self.resh_curv = np.vstack((self.resh_curv, temp[index + 1][i]))
                     self.resh_curv = np.vstack((self.resh_curv, temp[index][i]))
 
+        self.V1 = np.empty((0, 3))
+        self.V2 = np.empty((0, 3))
+        self.V3 = np.empty((0, 3))
+
+        n = 0
+
+        for j in range((size * 2 - 2) ** 2 + (size * 2 - 2)):
+            if j % (size * 2 - 2) == 0 and j != 0:
+                n += 2
+            self.V1 = np.vstack((self.V1, self.resh_curv[j + n]))
+            self.V2 = np.vstack((self.V2, self.resh_curv[j + n + 1]))
+            self.V3 = np.vstack((self.V3, self.resh_curv[j + n + 2]))
+
+        self.norm = np.empty((0, 3))
+
+        for i in range(len(self.V1)):
+            self.norm=np.vstack((self.norm,calcNormals(self.V1[i],self.V2[i],self.V3[i])))
+            # self.norm = np.vstack((self.norm, pyrr.vector3.generate_normals(self.V1[i], self.V2[i], self.V3[i])))
+
+
+        self.norm[::2] = -self.norm[::2]
+        print(len(self.V1) )
+        self.resh_curv = np.empty((0, 3))
+        for i in range(len(self.V1)):
+            self.resh_curv = np.vstack((self.resh_curv, [self.V1[i], self.norm[i],
+                                        self.V2[i], self.norm[i], self.V3[i], self.norm[i]]))
+
+        print(2)
+
+        # print(self.V1.shape,self.V2.shape,self.V3.shape)
 
 
 
@@ -243,7 +273,7 @@ class SimpleGrid(CameraWindow):
                     points = np.append(points, [x, y, 0])
         else:
             points = s_points['patch1']
-        self.curu = np.append(self.plot_surf(points), self.curu)
+        self.curu = np.append(plot_surf(points), self.curu)
         self.point = np.append(points, self.point)
 
     def add_patch(self, s_points=None):
@@ -259,7 +289,7 @@ class SimpleGrid(CameraWindow):
         # p[:, -1, :] = self.point.reshape(4, 4, 3)[:, 0, :]
         # p[:, -2, :] = 2 * self.point.reshape(4, 4, 3)[:, 0, :] - self.point.reshape(4, 4, 3)[:, 1, :]
 
-        self.curu = np.append(self.plot_surf(p.flatten()), self.curu)
+        self.curu = np.append(plot_surf(p), self.curu)
         self.plot_index()
         a = np.arange(8 * 4).reshape(8, 4)
         for i in a:
@@ -270,29 +300,6 @@ class SimpleGrid(CameraWindow):
         temp = np.reshape(self.point, [int(self.point.size / 12), 4, 3])
         temp = np.insert(temp, [0, 1, 2, 3], [p[0], p[1], p[2], p[3]], axis=0)
         self.point = temp
-
-    def plot_surf(self, points):
-        curv = []
-        curu = []
-        for i in points.reshape(4, 4, 3):
-            a = i[0][0:3]
-            b = i[1][0:3]
-            c = i[2][0:3]
-            d = i[3][0:3]
-            curv.append(biz(a, b, c, d))
-
-        curv = np.array(curv)
-        cf = curv.reshape(4, size, 3)
-
-        for i in range(len(cf[0])):
-            a = cf[0][i]
-            b = cf[1][i]
-            c = cf[2][i]
-            d = cf[3][i]
-
-            curu.append(biz(a, b, c, d))
-        curu = np.array(curu)
-        return curu
 
     def plot_index(self):
         m = int(self.curu.size / (3 * size ** 2))
@@ -313,9 +320,11 @@ class SimpleGrid(CameraWindow):
         proj = Matrix44.perspective_projection(45.0, self.aspect_ratio, 0.1, 1000.0)
         self.P_M.write(proj.astype('f4'))
         self.C_M.write(self.camera.matrix.astype('f4'))
-        self.lightPos.write(np.array([1.0, 5*np.cos(time), 5*np.sin(time)]).astype('f4'))
-        self.vbo_light.write(np.array([1.0, 5*np.cos(time), 5*np.sin(time)],dtype="f4"))
-        self.vao_norm.render(moderngl.POINTS)
+
+        self.viewPos.write(self.camera.position.astype('f4'))
+        self.lightPos.write(np.array([2 * np.cos(time), 2 * np.sin(time), 2.0]).astype('f4'))
+        self.vbo_light.write(np.array([2 * np.cos(time), 2 * np.sin(time), 2.0], dtype="f4"))
+
         self.vao_light.render(moderngl.POINTS)
         self.switcher.value = 0
         self.vao_grid.render(moderngl.LINES)

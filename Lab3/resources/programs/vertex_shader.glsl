@@ -1,10 +1,11 @@
 #version 430
 
-mat4 Mvp;
+
 uniform mat4 prog;
 uniform mat4 cam;
 uniform mat4 trans;
 uniform mat4 lookat;
+
 
 
 in vec3 normal ;
@@ -19,6 +20,6 @@ void main() {
 
     gl_Position =  prog* cam*lookat* trans* vec4(in_vert, 1.0);
     pick_color=point_color;
-    FragPos = vec3(lookat* trans * vec4(in_vert, 1.0f));
-    Normal = normal;
+    FragPos = vec3( trans * vec4(in_vert, 1.0f));
+    Normal = mat3(transpose(inverse(trans))) * normal;
 }
