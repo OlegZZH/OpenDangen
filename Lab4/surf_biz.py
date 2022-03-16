@@ -91,7 +91,7 @@ def axis():
 class SimpleGrid(CameraWindow):
     title = "Simple Grid"
     gl_version = (3, 3)
-    resource_dir = (Path(__file__) / '../../Lab4/resources').resolve()
+    resource_dir = (Path(__file__) / '../../Lab3/resources').resolve()
 
     def __init__(self, **args):
         super().__init__(**args)
