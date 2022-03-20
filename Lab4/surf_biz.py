@@ -47,26 +47,6 @@ def plot_surf(points):
     return curu
 
 
-@njit
-def calcNormals(V1, V2, V3):
-    vx1 = V1[0] - V2[0]
-    vy1 = V1[1] - V2[1]
-    vz1 = V1[2] - V2[2]
-    vx2 = V2[0] - V3[0]
-    vy2 = V2[1] - V3[1]
-    vz2 = V2[2] - V3[2]
-    N = []
-    N.append(vy1 * vz2 - vz1 * vy2)
-    N.append(vz1 * vx2 - vx1 * vz2)
-    N.append(vx1 * vy2 - vy1 * vx2)
-    wrki = np.sqrt(
-        np.square(vy1 * vz2 - vz1 * vy2) + np.square(vz1 * vx2 - vx1 * vz2) + np.square(vx1 * vy2 - vy1 * vx2))
-    N[0] = (N[0] / wrki) if wrki != 0 else 1
-    N[1] = (N[1] / wrki) if wrki != 0 else 1
-    N[2] = (N[2] / wrki) if wrki != 0 else 1
-    return N
-
-
 def grid(size, steps):
     u = np.repeat(np.linspace(-size, size, steps), 2)
     v = np.tile([-size, size], steps)
@@ -75,10 +55,10 @@ def grid(size, steps):
 
 
 @njit
-def add_normal(V1, V2, V3, norm):
+def add_normal(V1, V2, V3):
     resh_curv = []
     for i in prange(len(V1)):
-        resh_curv.append([V1[i], norm[i], V2[i], norm[i], V3[i], norm[i]])
+        resh_curv.append([V1[i],  V2[i],  V3[i]])
     return resh_curv
 
 
@@ -110,10 +90,8 @@ class SimpleGrid(CameraWindow):
         self.L_M = self.prog["lookat"]
         self.T_M = self.prog["trans"]
         self.switcher = self.prog["switcher"]
-        self.lightColor = self.prog["lightColor"]
-        self.objectColor = self.prog["objectColor"]
-        self.lightPos = self.prog["lightPos"]
-        self.viewPos = self.prog["viewPos"]
+
+
         self.point = np.array([])
         self.curu = np.array([])
         self.index_curv = np.array([])
@@ -130,7 +108,7 @@ class SimpleGrid(CameraWindow):
         self.normals()
         self.vbo_poligon = self.ctx.buffer(self.resh_curv.astype('f4'))
         # self.vbo_curu = self.ctx.buffer(self.curu.astype('f4'))
-        self.vbo_light = self.ctx.buffer(np.array([0.0, 0.0, 0.0], dtype='f4'))
+
 
         self.ibo_line = self.ctx.buffer(self.index.astype('i4'))
         # self.ibo_curv = self.ctx.buffer(self.index_curv.astype('i4'))
@@ -142,8 +120,8 @@ class SimpleGrid(CameraWindow):
         # self.vao_curu = self.ctx.vertex_array(self.prog,
         #                                       [(self.vbo_curu, '3f', 'in_vert')],
         #                                       index_buffer=self.ibo_curv)  # , index_buffer=self.ibo_curv
-        self.vao_poligon = self.ctx.vertex_array(self.prog, [(self.vbo_poligon, "3f 3f", 'in_vert', "normal")])
-        self.vao_light = self.ctx.vertex_array(self.prog, self.vbo_light, "in_vert")
+        self.vao_poligon = self.ctx.vertex_array(self.prog, [(self.vbo_poligon, "3f", 'in_vert' )])
+
 
         self.lookat = Matrix44.look_at(
             (0.01, 0.0, 4.0),  # eye
@@ -154,8 +132,7 @@ class SimpleGrid(CameraWindow):
         self.L_M.write(self.lookat.astype('f4'))
         self.ctx.wireframe = False
         self.T_M.write(self.translation.astype('f4'))
-        self.lightColor.write(np.array([1.0, 1.0, 1.0]).astype('f4'))
-        self.objectColor.write(np.array([1.0, 0.5, 0.31]).astype('f4'))
+
 
     def mouse_press_event(self, x, y, button):
         print("Mouse button {} pressed at {}, {}".format(button, x, y))
@@ -242,21 +219,8 @@ class SimpleGrid(CameraWindow):
             self.V2 = np.vstack((self.V2, self.resh_curv[j + n + 1]))
             self.V3 = np.vstack((self.V3, self.resh_curv[j + n + 2]))
 
-        self.norm = np.empty((0, 3))
+        self.resh_curv = np.array(add_normal(self.V1, self.V2, self.V3))
 
-        for i in range(len(self.V1)):
-            self.norm = np.vstack((self.norm, calcNormals(self.V1[i], self.V2[i], self.V3[i])))
-            # self.norm = np.vstack((self.norm, pyrr.vector3.generate_normals(self.V1[i], self.V2[i], self.V3[i])))
-
-        self.norm[::2] = -self.norm[::2]
-
-        # self.resh_curv = np.empty((0, 3))
-        self.resh_curv = np.array(add_normal(self.V1, self.V2, self.V3, self.norm))
-        # for i in range(len(self.V1)):
-        #     self.resh_curv = np.vstack((self.resh_curv, [self.V1[i], self.norm[i],
-        #                                 self.V2[i], self.norm[i], self.V3[i], self.norm[i]]))
-
-        # print(self.V1.shape,self.V2.shape,self.V3.shape)
 
     def update_index(self):
         global color
@@ -323,17 +287,13 @@ class SimpleGrid(CameraWindow):
         self.P_M.write(proj.astype('f4'))
         self.C_M.write(self.camera.matrix.astype('f4'))
 
-        self.viewPos.write(self.camera.position.astype('f4'))
-        self.lightPos.write(np.array([2 * np.cos(time), 2 * np.sin(time), 2.0]).astype('f4'))
-        self.vbo_light.write(np.array([2 * np.cos(time), 2 * np.sin(time), 2.0], dtype="f4"))
 
-        self.vao_light.render(moderngl.POINTS)
         self.switcher.value = 0
         self.vao_grid.render(moderngl.LINES)
         self.switcher.value = 1
         self.vao_axis.render(moderngl.LINES)
 
-        self.switcher.value = 4
+        self.switcher.value = 2
         self.vao_poligon.render(moderngl.TRIANGLES)
 
         self.switcher.value = 3
