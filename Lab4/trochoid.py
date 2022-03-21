@@ -10,7 +10,7 @@ def plot_trochoid(r=2,R=10,h=1):
     ax.plot(x,y)
     plt.axis('off')
     ax.set_aspect('equal')
-    fig.savefig('demo.png', transparent=True,bbox_inches='tight')
+    fig.savefig('demo.png', transparent=True,bbox_inches='tight',dpi=300)
     plt.show()
 
 

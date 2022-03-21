@@ -8,8 +8,9 @@ from pathlib import Path
 from OpenGL.GLU import *
 from numba import njit, prange
 from save_load import *
+from PIL import Image
 
-size = 70
+size = 4
 color = 255
 
 
@@ -71,7 +72,7 @@ def axis():
 class SimpleGrid(CameraWindow):
     title = "Simple Grid"
     gl_version = (3, 3)
-    resource_dir = (Path(__file__) / '../../Lab3/resources').resolve()
+    resource_dir = (Path(__file__) / '../../Lab4/resources').resolve()
 
     def __init__(self, **args):
         super().__init__(**args)
@@ -90,7 +91,7 @@ class SimpleGrid(CameraWindow):
         self.L_M = self.prog["lookat"]
         self.T_M = self.prog["trans"]
         self.switcher = self.prog["switcher"]
-
+        self.texture = self.load_texture_2d(r'texture/img.png')
 
         self.point = np.array([])
         self.curu = np.array([])
@@ -107,21 +108,19 @@ class SimpleGrid(CameraWindow):
 
         self.normals()
         self.vbo_poligon = self.ctx.buffer(self.resh_curv.astype('f4'))
-        # self.vbo_curu = self.ctx.buffer(self.curu.astype('f4'))
+
 
 
         self.ibo_line = self.ctx.buffer(self.index.astype('i4'))
-        # self.ibo_curv = self.ctx.buffer(self.index_curv.astype('i4'))
+
 
         self.vao_grid = self.ctx.vertex_array(self.prog, self.vbo, 'in_vert')
         self.vao_axis = self.ctx.vertex_array(self.prog, self.vbo_axis, 'in_vert')
         self.vao_points = self.ctx.vertex_array(self.prog, [(self.vbo_points, "3f 3f", 'in_vert', "point_color")],
                                                 index_buffer=self.ibo_line)
-        # self.vao_curu = self.ctx.vertex_array(self.prog,
-        #                                       [(self.vbo_curu, '3f', 'in_vert')],
-        #                                       index_buffer=self.ibo_curv)  # , index_buffer=self.ibo_curv
-        self.vao_poligon = self.ctx.vertex_array(self.prog, [(self.vbo_poligon, "3f", 'in_vert' )])
 
+        self.vao_poligon = self.ctx.vertex_array(self.prog, [(self.vbo_poligon, "3f 2f", 'in_vert',"tex_coord" )])
+        # self.vao_poligon = self.ctx.vertex_array(self.prog, [(self.vbo_poligon, "3f ", 'in_vert')])
 
         self.lookat = Matrix44.look_at(
             (0.01, 0.0, 4.0),  # eye
@@ -193,8 +192,18 @@ class SimpleGrid(CameraWindow):
                 # save_patch()
 
     def normals(self):
-        self.resh_curv = np.empty((0, 3))
+        self.resh_curv = np.empty((0, 5))
         temp = self.curu.reshape(size * 2, size, 3)
+
+        u = np.linspace(0, 1, size)
+        U=np.empty((0,size))
+        for i in range(2*size):
+            U=np.append(U,u)
+
+        temp=np.hstack((temp.reshape(size*size*2,3),u.repeat(2*size).reshape(-1,1)))
+        temp = np.hstack((temp.reshape(size * size * 2, 4), U.reshape(-1, 1)))
+        temp=temp.reshape(size*2,size,5)
+        print(temp)
 
         for index in range(size * 2 - 1):
             if index % 2 == 0:
@@ -206,20 +215,27 @@ class SimpleGrid(CameraWindow):
                     self.resh_curv = np.vstack((self.resh_curv, temp[index + 1][i]))
                     self.resh_curv = np.vstack((self.resh_curv, temp[index][i]))
 
-        self.V1 = np.empty((0, 3))
-        self.V2 = np.empty((0, 3))
-        self.V3 = np.empty((0, 3))
+        self.V1 = np.empty((0, 5))
+        self.V2 = np.empty((0, 5))
+        self.V3 = np.empty((0, 5))
 
         n = 0
 
         for j in range((size * 2 - 2) ** 2 + (size * 2 - 2)):
             if j % (size * 2 - 2) == 0 and j != 0:
                 n += 2
-            self.V1 = np.vstack((self.V1, self.resh_curv[j + n]))
+
+            self.V1 = np.vstack((self.V1,self.resh_curv[j + n]))
             self.V2 = np.vstack((self.V2, self.resh_curv[j + n + 1]))
             self.V3 = np.vstack((self.V3, self.resh_curv[j + n + 2]))
 
         self.resh_curv = np.array(add_normal(self.V1, self.V2, self.V3))
+
+
+
+
+
+
 
 
     def update_index(self):
@@ -283,23 +299,26 @@ class SimpleGrid(CameraWindow):
         self.ctx.clear(1.0, 1.0, 1.0)
         self.ctx.enable_only(moderngl.DEPTH_TEST)  # moderngl.CULL_FACE |
         glPointSize(15)
+
         proj = Matrix44.perspective_projection(45.0, self.aspect_ratio, 0.1, 1000.0)
         self.P_M.write(proj.astype('f4'))
         self.C_M.write(self.camera.matrix.astype('f4'))
-
+        # self.ctx.wireframe=True
 
         self.switcher.value = 0
         self.vao_grid.render(moderngl.LINES)
         self.switcher.value = 1
         self.vao_axis.render(moderngl.LINES)
 
-        self.switcher.value = 2
-        self.vao_poligon.render(moderngl.TRIANGLES)
 
         self.switcher.value = 3
         self.vao_points.render(moderngl.POINTS)
         self.switcher.value = 1
         self.vao_points.render(moderngl.LINES)
+
+        self.texture.use()
+        self.switcher.value = 4
+        self.vao_poligon.render(moderngl.TRIANGLES)
         # self.vao_curu.render(moderngl.POINTS)
 
 
