@@ -141,18 +141,18 @@ class SimpleGrid(CameraWindow):
         self.vao_axis.render(moderngl.LINES)
 
         self.R_M.write(rot_Z.astype('f4'))
-        # self.vao_line.render(moderngl.LINE_STRIP)
-        # self.vao_curva.render(moderngl.LINE_STRIP)
-        # self.switcher.value = 3
-        # self.vao_line.render(moderngl.POINTS)
-        #
-        #
-        # self.switcher.value = 2
-        # for i in self.surface_H:
-        #     self.R_M.write(i.astype('f4'))
-        #     self.vao_curva.render(moderngl.LINE_STRIP)
-        #     # self.vao_line.render(moderngl.LINE_STRIP)
-        #     # self.vao_line.render(moderngl.POINTS)
+        self.vao_line.render(moderngl.LINE_STRIP)
+        self.vao_curva.render(moderngl.LINE_STRIP)
+        self.switcher.value = 3
+        self.vao_line.render(moderngl.POINTS)
+
+
+        self.switcher.value = 2
+        for i in self.surface_H:
+            self.R_M.write(i.astype('f4'))
+            self.vao_curva.render(moderngl.LINE_STRIP)
+            # self.vao_line.render(moderngl.LINE_STRIP)
+            # self.vao_line.render(moderngl.POINTS)
 
 
 

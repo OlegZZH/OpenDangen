@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="73cc24fc-b430-49a1-909d-8435ce9a0c67" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../Lab2/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../Lab2/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Lab2/surf_biz.py" beforeDir="false" afterPath="$PROJECT_DIR$/../Lab2/surf_biz.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Lab2/surface1.npz" beforeDir="false" afterPath="$PROJECT_DIR$/../Lab2/surface1.npz" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Lab3/surf_biz.py" beforeDir="false" afterPath="$PROJECT_DIR$/../Lab3/surf_biz.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,7 +31,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../Lab2" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../nekitos/Lab2" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RunManager">

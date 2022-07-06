@@ -145,13 +145,13 @@ class SimpleGrid(CameraWindow):
                 self.vbo_curu.write(self.curu.astype('f4'))
                 self.vbo_points.write(self.point.astype("f4"))
 
-                self.save_patch()
+                # self.save_patch()
     def save_patch(self):
         np.savez("surface1",patch1=self.point[:, :, :3][1::2],patch2= self.point[:, :, :3][::2])
 
     def load_patch(self):
         self.load_data=np.load("surface1.npz")
-
+        print(self.load_data["patch1"])
 
 
 

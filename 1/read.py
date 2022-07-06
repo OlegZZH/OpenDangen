@@ -2,7 +2,7 @@ import numpy as np
 
 from main import *
 from matplotlib import pyplot as plt
-# from Lab1 import PointBuilder
+# from 1 import PointBuilder
 
 
 

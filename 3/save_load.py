@@ -5,4 +5,5 @@ def save_patch(point):
 
 def load_patch():
     load_data = np.load("surface1.npz")
+    print(load_data["patch2"])
     return load_data
